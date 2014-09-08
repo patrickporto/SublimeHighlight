@@ -128,17 +128,6 @@ def _get_x11_vars():
     else:
         return ""
 
-def _is_xfce():
-
-    "Return whether XFCE is in use."
-
-    # XFCE detection involves testing the output of a program.
-
-    try:
-        return _readfrom(_get_x11_vars() + "xprop -root _DT_SAVE_MODE", shell=1).strip().endswith(' = "xfce4"')
-    except OSError:
-        return 0
-
 def _is_x11():
 
     "Return whether the X Window System is in use."
@@ -154,18 +143,10 @@ def get_desktop():
     environment. If no environment could be detected, None is returned.
     """
 
-    if "KDE_FULL_SESSION" in os.environ or \
-        "KDE_MULTIHEAD" in os.environ:
-        return "KDE"
-    elif "GNOME_DESKTOP_SESSION_ID" in os.environ or \
-        "GNOME_KEYRING_SOCKET" in os.environ:
-        return "GNOME"
-    elif sys.platform == "darwin":
+    if sys.platform == "darwin":
         return "Mac OS X"
     elif hasattr(os, "startfile"):
         return "Windows"
-    elif _is_xfce():
-        return "XFCE"
 
     # KDE, GNOME and XFCE run on X11, so we have to test for X11 last.
 
@@ -196,13 +177,7 @@ def use_desktop(desktop):
 
     # Test for desktops where the overriding is not verified.
 
-    elif (desktop or detected) == "KDE":
-        return "KDE"
-    elif (desktop or detected) == "GNOME":
-        return "GNOME"
-    elif (desktop or detected) == "XFCE":
-        return "XFCE"
-    elif (desktop or detected) == "Mac OS X":
+    if (desktop or detected) == "Mac OS X":
         return "Mac OS X"
     elif (desktop or detected) == "X11":
         return "X11"
@@ -256,20 +231,11 @@ def open(url, desktop=None, wait=0):
         # NOTE: This returns None in current implementations.
         return os.startfile(url)
 
-    elif desktop_in_use == "KDE":
-        cmd = ["kfmclient", "exec", url]
-
-    elif desktop_in_use == "GNOME":
-        cmd = ["gnome-open", url]
-
-    elif desktop_in_use == "XFCE":
-        cmd = ["exo-open", url]
-
     elif desktop_in_use == "Mac OS X":
         cmd = ["open", url]
 
-    elif desktop_in_use == "X11" and "BROWSER" in os.environ:
-        cmd = [os.environ["BROWSER"], url]
+    elif desktop_in_use == "X11":
+        cmd = ["xdg-open", url]
 
     # Finish with an error where no suitable desktop was identified.
 
